@@ -85,7 +85,7 @@ def get_linter_command(file_type: str, file_path: str) -> Optional[List[str]]:
         'javascript': ['node', '--check', file_path],  # Basic syntax check
         'typescript': ['npx', 'tsc', '--noEmit', file_path],
         'json': ['python', '-m', 'json.tool', file_path],
-        'yaml': ['python', '-c', f'import yaml; yaml.safe_load(open("{file_path}"))'
+        'yaml': ['python', '-c', f'import yaml; yaml.safe_load(open("{file_path}"))']
     }
     
     # Try to use more sophisticated linters if available
