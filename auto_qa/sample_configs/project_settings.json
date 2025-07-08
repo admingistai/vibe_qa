@@ -1,0 +1,46 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "npm run lint"
+          },
+          {
+            "type": "command",
+            "command": "python -m qa_tools.auto_qa"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "npm run lint"
+          },
+          {
+            "type": "command",
+            "command": "python -m qa_tools.auto_qa"
+          }
+        ]
+      }
+    ]
+  },
+  "permissions": {
+    "allow": [
+      "Bash(npm run *)",
+      "Bash(yarn *)",
+      "Bash(npx *)",
+      "Bash(python -m qa_tools.*)",
+      "Bash(pytest*)",
+      "Bash(jest*)"
+    ]
+  },
+  "env": {
+    "NODE_ENV": "development",
+    "CLAUDE_AUTO_QA_LEVEL": "strict"
+  }
+}

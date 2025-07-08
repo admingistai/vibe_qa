@@ -1,0 +1,54 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python -m qa_tools.auto_qa"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python -m qa_tools.auto_qa"
+          }
+        ]
+      },
+      {
+        "matcher": "MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python -m qa_tools.auto_qa"
+          }
+        ]
+      }
+    ]
+  },
+  "permissions": {
+    "allow": [
+      "Bash(python -m qa_tools.*)",
+      "Bash(pylint*)",
+      "Bash(eslint*)",
+      "Bash(npm run lint*)",
+      "Bash(npm run test*)",
+      "Bash(cargo check*)",
+      "Bash(go fmt*)",
+      "Bash(rustfmt*)"
+    ],
+    "deny": [
+      "Bash(curl*)",
+      "Bash(wget*)",
+      "Bash(rm -rf*)"
+    ]
+  },
+  "env": {
+    "CLAUDE_AUTO_QA_ENABLED": "1",
+    "CLAUDE_AUTO_QA_LEVEL": "normal"
+  }
+}

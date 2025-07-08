@@ -1,0 +1,47 @@
+name: "Sample API Flow Test"
+description: "Example integration test flow for API endpoints"
+
+variables:
+  user_id: "test_user_123"
+  test_email: "test@example.com"
+
+steps:
+  - name: "Create User"
+    method: "POST"
+    url: "/api/users"
+    headers:
+      Content-Type: "application/json"
+    body:
+      email: "{{test_email}}"
+      name: "Test User"
+    expect:
+      status: 201
+      body:
+        email: "{{test_email}}"
+    extract:
+      created_user_id: "id"
+
+  - name: "Fetch User"
+    method: "GET"
+    url: "/api/users/{{created_user_id}}"
+    expect:
+      status: 200
+      body:
+        id: "{{created_user_id}}"
+        email: "{{test_email}}"
+
+  - name: "Update User"
+    method: "PUT"
+    url: "/api/users/{{created_user_id}}"
+    headers:
+      Content-Type: "application/json"
+    body:
+      name: "Updated Test User"
+    expect:
+      status: 200
+
+  - name: "Delete User"
+    method: "DELETE"
+    url: "/api/users/{{created_user_id}}"
+    expect:
+      status: 204
