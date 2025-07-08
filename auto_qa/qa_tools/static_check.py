@@ -79,24 +79,42 @@ def _parse_text_output(output: str) -> List[Dict[str, Any]]:
         re.compile(r"^([^(]+)\((\d+),(\d+)\):\s*(.*?)$", re.MULTILINE),
         # file(line): message
         re.compile(r"^([^(]+)\((\d+)\):\s*(.*?)$", re.MULTILINE),
+        # Python syntax error: File "file", line X
+        re.compile(r'File "([^"]+)", line (\d+)', re.MULTILINE),
     ]
     
     for pattern in patterns:
         for match in pattern.finditer(output):
             groups = match.groups()
-            if len(groups) >= 3:
+            if len(groups) >= 2:
                 file_path = groups[0]
                 line = groups[1]
-                col = groups[2] if len(groups) > 3 else "0"
-                message = groups[-1]
                 
-                issues.append({
-                    "type": "lint",
-                    "location": f"{file_path}:{line}:{col}",
-                    "message": message.strip(),
-                    "code": "",
-                    "severity": 1 if any(word in message.lower() for word in ["error", "fail"]) else 0
-                })
+                # Handle Python syntax errors specially
+                if 'File "' in pattern.pattern:
+                    # Extract the error type from output (usually follows the match)
+                    error_msg = "SyntaxError"
+                    if "SyntaxError:" in output:
+                        error_msg = output.split("SyntaxError:")[1].strip().split('\n')[0]
+                    
+                    issues.append({
+                        "type": "lint",
+                        "location": f"{file_path}:{line}:0",
+                        "message": f"SyntaxError: {error_msg}",
+                        "code": "syntax-error",
+                        "severity": 1
+                    })
+                elif len(groups) >= 3:
+                    col = groups[2] if len(groups) > 3 else "0"
+                    message = groups[-1]
+                    
+                    issues.append({
+                        "type": "lint",
+                        "location": f"{file_path}:{line}:{col}",
+                        "message": message.strip(),
+                        "code": "",
+                        "severity": 1 if any(word in message.lower() for word in ["error", "fail"]) else 0
+                    })
     
     return issues
 
@@ -128,7 +146,7 @@ def run_lint(cmd: List[str]) -> Dict[str, Any]:
         output = proc.stdout + proc.stderr
         
         # Try to parse as JSON first (common for modern linters)
-        if "--format=json" in cmd or "-f" in cmd and "json" in cmd:
+        if "--format=json" in cmd or "--output-format=json" in cmd or ("-f" in cmd and "json" in cmd):
             # Try different JSON parsers based on likely tool
             if "eslint" in cmd[0].lower():
                 result["issues"] = _parse_eslint_json(proc.stdout)

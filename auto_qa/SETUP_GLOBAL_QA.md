@@ -212,25 +212,88 @@ grep -o '"type":"[^"]*"' logs/qa_results.ndjson | sort | uniq -c
 
 ## 🚨 Troubleshooting
 
+### Auto-QA Not Running Automatically
+
+**1. Check Hook Configuration**
+```bash
+# Verify hooks are properly configured
+cat ~/.claude/settings.json | grep -A 20 "hooks"
+
+# Should show PostToolUse hooks for Write, Edit, MultiEdit
+```
+
+**2. Check Debug Logs**
+```bash
+# View auto-QA execution logs
+tail -f ~/.claude/logs/auto_qa_debug.log
+
+# Look for "Auto-QA Hook Triggered" messages
+```
+
+**3. Test Manual Execution**
+```bash
+# Test static analysis
+python -m qa_tools.static_check python -m py_compile test.py
+
+# Test auto-QA coordinator
+python -m qa_tools.auto_qa
+
+# Test with specific file
+python -m qa_tools.auto_qa test_file.py
+```
+
+### Syntax Errors Not Detected
+
+**Issue**: Python syntax errors aren't being caught by auto-QA
+**Solution**: This was fixed in recent updates. Ensure you have:
+- Latest version of the auto-QA tools
+- Pylint installed: `pip install pylint`
+- Proper JSON parsing in static_check.py
+
+```bash
+# Test syntax error detection
+echo "def broken(): return 'missing quote" > test_syntax.py
+python -m qa_tools.static_check ['pylint', '--output-format=json', 'test_syntax.py']
+```
+
 ### Hook Not Running
 - Check `~/.claude/settings.json` syntax with `python -m json.tool ~/.claude/settings.json`
 - Verify Python can find qa_tools: `python -c "import qa_tools; print('OK')"`
 - Check Claude Code permissions allow the commands
+- Look for duplicate hook entries (can cause multiple executions)
 
 ### QA Tools Not Found
-- Verify installation: `python -m qa_tools.auto_qa --version`
+- Verify installation: `python -m qa_tools.auto_qa`
 - Check Python path: `python -c "import sys; print(sys.path)"`
 - Reinstall: `python qa_tools/install.py`
+- Test individual tools: `python -m qa_tools.static_check`
 
 ### Memory Instructions Ignored
 - Verify `~/.claude/CLAUDE.md` exists and is readable
 - Check for syntax errors in the markdown
 - Restart Claude Code to reload memory
+- Ensure global memory is in correct location: `~/.claude/CLAUDE.md`
 
-### Too Many False Positives
-- Adjust sensitivity in `qa_tools/log_scan.py`
-- Add file type exclusions in `qa_tools/auto_qa.py`
-- Use project-specific settings to override global config
+### Common Issues & Solutions
+
+**Multiple Executions**: Remove duplicate hook entries in settings.json
+**Permission Errors**: Ensure Claude has permission to run Python commands
+**Import Errors**: Verify Python path and qa_tools installation
+**No Debug Logs**: Check if `~/.claude/logs/` directory exists
+**Pylint Not Found**: Install with `pip install pylint`
+
+### Installation Verification
+```bash
+# Run comprehensive installation test
+python test_installation.py
+
+# Check if hooks are firing
+echo "def test(): print('test')" > test_hook.py
+# Monitor ~/.claude/logs/auto_qa_debug.log for activity
+
+# Test file detection
+python -c "from qa_tools.auto_qa import analyze_recent_writes; print(analyze_recent_writes())"
+```
 
 ## 🎉 Success Indicators
 

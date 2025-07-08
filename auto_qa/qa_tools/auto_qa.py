@@ -12,6 +12,7 @@ import subprocess
 from pathlib import Path
 from typing import Dict, List, Any, Optional
 from datetime import datetime
+import logging
 
 try:
     from .static_check import run_lint
@@ -149,23 +150,86 @@ def analyze_recent_writes(max_age_minutes: int = 5) -> List[str]:
     return recent_files
 
 
+def setup_logging():
+    """Setup debug logging to track hook executions"""
+    log_dir = Path.home() / '.claude' / 'logs'
+    log_dir.mkdir(parents=True, exist_ok=True)
+    
+    log_file = log_dir / 'auto_qa_debug.log'
+    
+    logging.basicConfig(
+        level=logging.DEBUG,
+        format='%(asctime)s - %(levelname)s - %(message)s',
+        handlers=[
+            logging.FileHandler(log_file, mode='a'),
+            logging.StreamHandler(sys.stdout)
+        ]
+    )
+    
+    return logging.getLogger(__name__)
+
+
 def main():
     """Main coordinator function"""
+    logger = setup_logging()
+    
+    logger.info("="*60)
+    logger.info("Auto-QA Hook Triggered")
+    logger.info(f"Working Directory: {os.getcwd()}")
+    logger.info(f"Command Line Args: {sys.argv}")
+    logger.info(f"Environment: {os.environ.get('CLAUDE_CODE_TOOL', 'Not set')}")
+    
+    # Check for environment variables that might contain file info
+    claude_file = os.environ.get('CLAUDE_FILE_PATH')
+    claude_dir = os.environ.get('CLAUDE_WORKING_DIR')
+    
+    if claude_file:
+        logger.info(f"CLAUDE_FILE_PATH: {claude_file}")
+    if claude_dir:
+        logger.info(f"CLAUDE_WORKING_DIR: {claude_dir}")
+        # Change to the Claude working directory if provided
+        try:
+            os.chdir(claude_dir)
+            logger.info(f"Changed to directory: {claude_dir}")
+        except Exception as e:
+            logger.error(f"Failed to change directory: {e}")
+    
     print("🔍 Auto-QA: Analyzing recent changes...")
     
     # Determine what to analyze
     if len(sys.argv) > 1:
         # Specific file provided
         target_file = sys.argv[1]
+        logger.info(f"Specific file provided: {target_file}")
+        
+        # If it's not an absolute path and we have a Claude dir, make it relative to that
+        if not os.path.isabs(target_file) and claude_dir and not os.path.exists(target_file):
+            potential_path = os.path.join(claude_dir, target_file)
+            if os.path.exists(potential_path):
+                target_file = potential_path
+                logger.info(f"Resolved to: {target_file}")
+        
         if not os.path.exists(target_file):
+            logger.error(f"File not found: {target_file}")
             print(f"❌ File not found: {target_file}")
             sys.exit(1)
         files_to_check = [target_file]
+    elif claude_file:
+        # Use file from environment if provided
+        logger.info(f"Using file from CLAUDE_FILE_PATH: {claude_file}")
+        if os.path.exists(claude_file):
+            files_to_check = [claude_file]
+        else:
+            logger.error(f"File from env not found: {claude_file}")
+            files_to_check = []
     else:
-        # Analyze recent writes
+        # Analyze recent writes in current directory
+        logger.info("No specific file provided, analyzing recent writes...")
         files_to_check = analyze_recent_writes()
+        logger.info(f"Found {len(files_to_check)} recent files to check")
     
     if not files_to_check:
+        logger.info("No recent files to analyze")
         print("✅ No recent files to analyze")
         sys.exit(0)
     
@@ -173,11 +237,13 @@ def main():
     critical_issues = 0
     
     for file_path in files_to_check:
+        logger.info(f"Analyzing file: {file_path}")
         print(f"\n📄 Analyzing: {file_path}")
         
         try:
             # Run static analysis
             result = run_static_analysis(file_path)
+            logger.debug(f"Static analysis result: {result}")
             
             if result["issues"]:
                 print(f"  ⚠️  Found {len(result['issues'])} issues:")
@@ -209,23 +275,28 @@ def main():
                         total_issues += 1
                 
         except Exception as e:
+            logger.exception(f"Error analyzing {file_path}")
             print(f"  ❌ Error analyzing {file_path}: {str(e)}")
             critical_issues += 1
     
     # Summary
+    logger.info(f"Auto-QA Summary - Files: {len(files_to_check)}, Total Issues: {total_issues}, Critical: {critical_issues}")
     print(f"\n📊 Auto-QA Summary:")
     print(f"  Files analyzed: {len(files_to_check)}")
     print(f"  Total issues: {total_issues}")
     print(f"  Critical issues: {critical_issues}")
     
     if critical_issues > 0:
+        logger.warning(f"Exiting with critical issues: {critical_issues}")
         print(f"\n🚨 Found {critical_issues} critical issues that need attention!")
         print("💡 Claude should fix these issues before continuing.")
         sys.exit(1)
     elif total_issues > 0:
+        logger.warning(f"Exiting with non-critical issues: {total_issues}")
         print(f"\n⚠️  Found {total_issues} issues that should be reviewed.")
         sys.exit(2)
     else:
+        logger.info("All checks passed successfully")
         print("\n✅ All checks passed!")
         sys.exit(0)
 

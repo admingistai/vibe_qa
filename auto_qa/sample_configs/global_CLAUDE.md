@@ -110,6 +110,45 @@ When issues arise:
 4. Test fixes in isolation when possible
 5. Document any workarounds or special cases
 
+### Troubleshooting Auto-QA
+
+If auto-QA is not running automatically in your Claude Code instance:
+
+1. **Check Hook Configuration**
+   - Verify hooks are configured in `~/.claude/settings.json`
+   - Look for duplicate entries (should only have one entry per tool)
+   - Run `/hooks` in Claude Code to see active hooks
+
+2. **Check Debug Logs**
+   - View auto-QA execution logs: `tail -f ~/.claude/logs/auto_qa_debug.log`
+   - Look for "Auto-QA Hook Triggered" messages
+   - Check which files are being analyzed
+
+3. **Verify QA Tools Installation**
+   ```bash
+   # Test if QA tools are accessible
+   python -m qa_tools.auto_qa --help
+   
+   # Test static analysis directly
+   python -m qa_tools.static_check python -m py_compile test.py
+   ```
+
+4. **Install Better Linters**
+   - For Python: `pip install pylint`
+   - For JavaScript/TypeScript: `npm install -g eslint`
+   - Auto-QA will use these if available for better analysis
+
+5. **Manual Testing**
+   - Create a test file with errors: `test_auto_qa_hooks.py`
+   - Check if hooks fire when you save/edit files
+   - Review `logs/qa_results.ndjson` for results
+
+6. **Common Issues**
+   - Duplicate hook entries can cause multiple executions
+   - Missing linters result in basic syntax checks only
+   - Claude Code may need restart after settings changes
+   - Check permissions in `.claude/settings.local.json`
+
 ### Performance Considerations
 
 - QA tools should not significantly slow down development

@@ -180,23 +180,71 @@ patterns = [
 
 ## 🔍 Troubleshooting
 
-### Common Issues
-- **QA tools not running**: Check `~/.claude/settings.json` syntax
-- **Import errors**: Verify Python path with `python -c "import qa_tools"`
-- **Permission denied**: Ensure Claude permissions allow the commands
-- **False positives**: Adjust sensitivity in individual tool files
+### If Auto-QA is Not Running Automatically
+
+1. **Check Hook Configuration**
+   ```bash
+   # Verify hooks are configured
+   cat ~/.claude/settings.json | grep -A 20 "hooks"
+   
+   # Should show PostToolUse hooks for Write, Edit, MultiEdit
+   ```
+
+2. **Check Debug Logs**
+   ```bash
+   # View auto-QA execution logs
+   tail -f ~/.claude/logs/auto_qa_debug.log
+   
+   # Look for "Auto-QA Hook Triggered" messages
+   ```
+
+3. **Test QA Tools Manually**
+   ```bash
+   # Test static analysis
+   python -m qa_tools.static_check python -m py_compile test.py
+   
+   # Test auto-QA coordinator
+   python -m qa_tools.auto_qa
+   ```
+
+4. **Common Issues & Solutions**
+   - **Syntax errors not detected**: Check if pylint is installed (`pip install pylint`)
+   - **Multiple executions**: Remove duplicate hook entries in settings.json
+   - **Permission errors**: Ensure Claude has permission to run Python commands
+   - **Import errors**: Verify Python path with `python -c "import qa_tools"`
 
 ### Debug Commands
 ```bash
-# Test QA tools individually
-python -m qa_tools.static_check ['python', '-m', 'py_compile', 'test.py']
+# Test individual QA tools
+python -m qa_tools.static_check ['pylint', '--output-format=json', 'test.py']
+python -m qa_tools.log_scan "ERROR: Something failed"
 
-# Check Claude settings
+# Check Claude settings syntax
 python -m json.tool ~/.claude/settings.json
 
 # View recent QA results
 tail -f logs/qa_results.ndjson | python -m json.tool
+
+# Check if auto-QA is finding recent files
+python -c "from qa_tools.auto_qa import analyze_recent_writes; print(analyze_recent_writes())"
 ```
+
+### Installation Verification
+```bash
+# Run comprehensive installation test
+python test_installation.py
+
+# Check if hooks are firing
+echo "def test(): pass" > test_hook.py
+# Watch ~/.claude/logs/auto_qa_debug.log for activity
+```
+
+### Directory Issues
+If auto-QA runs in the wrong directory (installation dir instead of project dir):
+- See `FIX_DIRECTORY_ISSUE.md` for detailed solutions
+- Use the wrapper script: `qa_tools/auto_qa_wrapper.py`
+- Set `CLAUDE_WORKING_DIR` environment variable
+- Pass file paths directly in hook configuration
 
 ## 📋 Requirements
 
