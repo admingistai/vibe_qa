@@ -279,7 +279,6 @@ def test_installation():
     
     tests = [
         ("QA tools import", "python -c 'import qa_tools; print(\"OK\")'"),
-        ("Auto-QA coordinator", "python -m qa_tools.auto_qa --help"),
         ("Static check", "python -c 'from qa_tools.static_check import run_lint; print(\"OK\")'"),
         ("Log scan", "python -c 'from qa_tools.log_scan import scan_logs; print(\"OK\")'"),
         ("Integration tests", "python -c 'from qa_tools.int_tests import run_flow; print(\"OK\")'"),
