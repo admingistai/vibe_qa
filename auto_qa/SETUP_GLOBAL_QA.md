@@ -102,53 +102,8 @@ Create or edit your global Claude memory file:
 # Create/edit global memory
 touch ~/.claude/CLAUDE.md
 ```
-
-Add to `~/.claude/CLAUDE.md`:
-
-```markdown
-# Auto-QA Workflow
-
-## Post-Write Quality Assurance
-
-After every file write, edit, or code generation operation, you MUST automatically:
-
-1. **Run Static Analysis** - Check code for syntax errors, style issues, and potential bugs
-2. **Scan for Issues** - Look for errors, warnings, and problems in any output
-3. **Fix Issues Immediately** - If any issues are found, fix them before continuing
-4. **Verify Fixes** - Re-run QA tools to ensure issues are resolved
-
-## Auto-QA Tool Commands
-
-### Manual QA Commands (if needed)
-- **Static Check**: `python -m qa_tools.static_check ['command', 'args']`
-- **Log Scan**: `python -m qa_tools.log_scan "log_text"`
-- **Integration Tests**: `python -m qa_tools.int_tests "flow.yaml" "base_url"`
-- **Auto Coordinator**: `python -m qa_tools.auto_qa [file_path]`
-
-## Issue Resolution Protocol
-
-When QA tools find issues:
-
-1. **Stop** - Do not continue with new tasks
-2. **Analyze** - Review the specific issues found
-3. **Fix** - Make necessary corrections immediately
-4. **Verify** - Re-run QA to confirm fixes work
-5. **Continue** - Only proceed once all issues are resolved
-
-## File Type Handling
-
-- **Code Files** (.py, .js, .ts, etc.) → Static analysis + syntax checking
-- **Log Files** (.log, .out, .err) → Error/warning detection
-- **Config Files** (.json, .yaml, .toml) → Format validation
-- **Test Files** → Run appropriate test suites when possible
-
-## Error Handling
-
-If QA tools encounter errors:
-- Report the specific error to the user
-- Suggest manual resolution steps
-- Do not proceed with additional operations until resolved
-```
+Copy the contents of auto_qa/sample_configs/global_CLAUDE.md.
+Add to `~/.claude/CLAUDE.md`.
 
 ### Step 4: Test the Installation
 
