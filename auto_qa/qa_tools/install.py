@@ -325,9 +325,9 @@ def main():
     if not setup_claude_settings():
         success = False
     
-    # Setup Claude memory
-    if not setup_claude_memory():
-        success = False
+    # Setup Claude memory DEPRECATED - set up manually
+    #if not setup_claude_memory():
+    #    success = False
     
     # Test installation
     if not test_installation():
